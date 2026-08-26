@@ -5,7 +5,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR /build
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-RUN python -m pip wheel --wheel-dir /wheels . "msgpack>=1.2.1"
+RUN python -m pip wheel --wheel-dir /wheels .
 
 FROM python:3.13-slim AS runner
 
@@ -23,7 +23,8 @@ RUN apt-get update \
     && mkdir -p /data \
     && chown pulseboard:pulseboard /data
 COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-cache-dir --upgrade "setuptools>=78.1.1" /wheels/* \
+RUN python -m pip install --no-cache-dir /wheels/* \
+    && python -m pip uninstall --yes pip setuptools \
     && rm -rf /wheels
 
 USER pulseboard
