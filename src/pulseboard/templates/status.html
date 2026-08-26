@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Current service availability and recent incident history">
+    <meta http-equiv="refresh" content="30">
+    <title>Pulseboard / Service status</title>
+    <link rel="icon" href="{{ url_for('static', path='/favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', path='/status.css') }}">
+  </head>
+  <body data-condition="{{ summary.overall_status }}">
+    <a class="skip-link" href="#service-status">Skip to service status</a>
+
+    <header class="status-header">
+      <a class="wordmark" href="/status" aria-label="Pulseboard service status">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>Pulseboard</span>
+      </a>
+      <p>Public service bulletin</p>
+    </header>
+
+    <main id="service-status">
+      <section class="condition" aria-labelledby="condition-title">
+        <div class="condition-signal" aria-hidden="true"><span></span></div>
+        <div>
+          <p class="kicker">Current network condition</p>
+          {% if summary.overall_status == "operational" %}
+          <h1 id="condition-title">All systems operational.</h1>
+          <p>Every active service is responding within its expected contract.</p>
+          {% elif summary.overall_status == "degraded" %}
+          <h1 id="condition-title">Service disruption detected.</h1>
+          <p>One or more services need attention. Updates appear here automatically.</p>
+          {% else %}
+          <h1 id="condition-title">Awaiting first signal.</h1>
+          <p>No completed service checks are available yet.</p>
+          {% endif %}
+        </div>
+        <div class="refresh-note">
+          <span>Updated</span>
+          <time datetime="{{ summary.generated_at.isoformat() }}">{{ summary.generated_at.strftime("%d %b %Y · %H:%M UTC") }}</time>
+          <small>Auto-refreshes every 30 seconds</small>
+        </div>
+      </section>
+
+      <section class="service-section" aria-labelledby="services-title">
+        <div class="section-title">
+          <div>
+            <p class="kicker">Live availability</p>
+            <h2 id="services-title">Services</h2>
+          </div>
+          <p>{{ summary.monitors_up }} up / {{ summary.monitors_down }} affected / {{ summary.monitors_paused }} paused</p>
+        </div>
+
+        <div class="service-list">
+          {% for monitor in summary.monitors %}
+          <article class="service-row" data-status="{{ monitor.current_status }}">
+            <div>
+              <span class="service-dot" aria-hidden="true"></span>
+              <div>
+                <h3>{{ monitor.name }}</h3>
+                <p>
+                  {% if monitor.last_check %}
+                  Last checked {{ monitor.last_check.checked_at.strftime("%d %b · %H:%M UTC") }}
+                  {% else %}
+                  Waiting for first check
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+            <dl>
+              <div>
+                <dt>24h uptime</dt>
+                <dd>{% if monitor.uptime_24h is not none %}{{ "%.2f"|format(monitor.uptime_24h) }}%{% else %}—{% endif %}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{{ monitor.current_status }}</dd>
+              </div>
+            </dl>
+          </article>
+          {% else %}
+          <div class="empty-state">
+            <p class="kicker">No services published</p>
+            <h3>Status monitoring has not started.</h3>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="incident-section" aria-labelledby="incidents-title">
+        <div class="section-title">
+          <div>
+            <p class="kicker">Recent history</p>
+            <h2 id="incidents-title">Incident log</h2>
+          </div>
+          <p>Latest 20 events</p>
+        </div>
+
+        <div class="incident-list">
+          {% for incident in incidents %}
+          <article class="incident-row">
+            <span class="incident-mark{% if incident.resolved_at %} resolved{% endif %}" aria-hidden="true"></span>
+            <div>
+              <h3>{{ incident.monitor_name }}</h3>
+              <p>{{ incident.cause }}</p>
+            </div>
+            <div class="incident-time">
+              <strong>{% if incident.resolved_at %}Resolved{% else %}Investigating{% endif %}</strong>
+              <time datetime="{{ incident.started_at.isoformat() }}">{{ incident.started_at.strftime("%d %b %Y · %H:%M UTC") }}</time>
+            </div>
+          </article>
+          {% else %}
+          <div class="quiet-state">
+            <span aria-hidden="true">✓</span>
+            <div>
+              <h3>No incidents reported.</h3>
+              <p>The event ledger is clear.</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Powered by Pulseboard</span>
+      <a href="/api/status">Status API</a>
+      <a href="/">Operator dashboard</a>
+    </footer>
+  </body>
+</html>

@@ -42,12 +42,46 @@ def _not_found() -> HTTPException:
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Monitor not found.")
 
 
+def _status_summary(monitor_views: list[MonitorView]) -> StatusSummary:
+    counts = {
+        state: sum(view.current_status == state for view in monitor_views)
+        for state in ("up", "down", "pending", "paused")
+    }
+    if counts["down"]:
+        overall = "degraded"
+    elif counts["up"]:
+        overall = "operational"
+    else:
+        overall = "unknown"
+    return StatusSummary(
+        generated_at=datetime.now(UTC),
+        overall_status=overall,
+        monitors_up=counts["up"],
+        monitors_down=counts["down"],
+        monitors_pending=counts["pending"],
+        monitors_paused=counts["paused"],
+        monitors=monitor_views,
+    )
+
+
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={"show_docs": request.app.state.settings.show_docs},
+    )
+
+
+@router.get("/status", response_class=HTMLResponse, include_in_schema=False)
+async def status_page(request: Request, session: Session) -> HTMLResponse:
+    summary = _status_summary(await list_monitor_views(session))
+    recent_incidents = await list_incidents(session, limit=20)
+    return templates.TemplateResponse(
+        request=request,
+        name="status.html",
+        context={"summary": summary, "incidents": recent_incidents},
+        headers={"Cache-Control": "public, max-age=10"},
     )
 
 
@@ -181,26 +215,7 @@ async def incidents(
 
 @router.get("/api/status", response_model=StatusSummary, tags=["status"])
 async def public_status(session: Session) -> StatusSummary:
-    monitor_views = await list_monitor_views(session)
-    counts = {
-        state: sum(view.current_status == state for view in monitor_views)
-        for state in ("up", "down", "pending", "paused")
-    }
-    if counts["down"]:
-        overall = "degraded"
-    elif counts["up"]:
-        overall = "operational"
-    else:
-        overall = "unknown"
-    return StatusSummary(
-        generated_at=datetime.now(UTC),
-        overall_status=overall,
-        monitors_up=counts["up"],
-        monitors_down=counts["down"],
-        monitors_pending=counts["pending"],
-        monitors_paused=counts["paused"],
-        monitors=monitor_views,
-    )
+    return _status_summary(await list_monitor_views(session))
 
 
 @router.get("/health/live", include_in_schema=False)

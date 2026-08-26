@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/container-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![License: MIT](https://img.shields.io/badge/license-MIT-181914.svg)](LICENSE)
 
-A compact, self-hosted HTTP uptime monitor with incident history, an operations dashboard, and a small deployment footprint.
+A compact, self-hosted HTTP uptime monitor with incident history, an operations dashboard, a public status page, and a small deployment footprint.
 
 ![Pulseboard operations dashboard](docs/pulseboard-dashboard.png)
 
@@ -18,6 +18,9 @@ Pulseboard checks public HTTP endpoints on a schedule, records latency and avail
 - **Safe outbound defaults:** private and reserved networks are blocked, credentials are rejected, and redirects are not followed.
 - **Protected writes:** set one environment variable to require an API key for create, update, check, and delete operations.
 - **Observable itself:** liveness, readiness, and metrics endpoints are included.
+- **Ready for customers:** `/status` publishes a responsive, read-only service bulletin without exposing monitored URLs.
+
+![Pulseboard public status page](docs/pulseboard-status.png)
 
 ## Run with Docker
 
@@ -68,6 +71,7 @@ Use `PULSEBOARD_ALLOW_PRIVATE_TARGETS=true` only when Pulseboard runs on a trust
 
 | Endpoint | Purpose |
 | --- | --- |
+| `GET /status` | Public, auto-refreshing service status page |
 | `GET /api/status` | Public operational summary |
 | `GET /api/monitors` | Monitor state and 24-hour availability |
 | `POST /api/monitors` | Create a validated monitor |

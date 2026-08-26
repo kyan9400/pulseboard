@@ -95,6 +95,13 @@ async def test_status_and_prometheus_metrics(
     assert summary["overall_status"] == "operational"
     assert summary["monitors_up"] == 1
 
+    status_page = await client.get("/status")
+    assert status_page.status_code == 200
+    assert "All systems operational." in status_page.text
+    assert monitor_payload["name"] in status_page.text
+    assert monitor_payload["url"] not in status_page.text
+    assert status_page.headers["cache-control"] == "public, max-age=10"
+
     metrics = await client.get("/metrics")
     assert metrics.status_code == 200
     assert 'pulseboard_monitors{state="up"} 1' in metrics.text
@@ -227,6 +234,6 @@ async def test_production_mode_hides_interactive_docs(tmp_path: Path) -> None:
     ):
         dashboard = await production.get("/")
         assert dashboard.status_code == 200
-        assert 'href="/api/status">Status</a>' in dashboard.text
+        assert 'href="/status">Status</a>' in dashboard.text
         assert (await production.get("/docs")).status_code == 404
         assert (await production.get("/openapi.json")).status_code == 404

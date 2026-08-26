@@ -2,6 +2,11 @@
 
 All notable changes to Pulseboard are documented here.
 
+## 1.1.0 — 2026-08-26
+
+- Added a public, auto-refreshing service status page with current availability and incident history.
+- Kept the public presentation privacy-safe by omitting monitored endpoint URLs.
+
 ## 1.0.0 — 2026-08-26
 
 - Added scheduled HTTP and HEAD availability checks with bounded concurrency.
