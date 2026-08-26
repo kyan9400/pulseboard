@@ -1,6 +1,7 @@
 const state = {
   monitors: [],
   incidents: [],
+  slo: [],
   refreshing: false,
 };
 
@@ -20,6 +21,10 @@ const elements = {
   monitorEmpty: document.querySelector("#monitor-empty"),
   incidentList: document.querySelector("#incident-list"),
   incidentEmpty: document.querySelector("#incident-empty"),
+  sloGrid: document.querySelector("#slo-grid"),
+  sloEmpty: document.querySelector("#slo-empty"),
+  sloWindow: document.querySelector("#slo-window"),
+  sloTarget: document.querySelector("#slo-target"),
   monitorCount: document.querySelector("#monitor-count"),
   overallDot: document.querySelector("#overall-dot"),
   overallLabel: document.querySelector("#overall-label"),
@@ -77,6 +82,13 @@ function formatDuration(value) {
 
 function formatUptime(value) {
   return value === null || value === undefined ? "—" : `${value.toFixed(2)}%`;
+}
+
+function formatBudget(seconds) {
+  if (seconds === null || seconds === undefined) return "—";
+  if (seconds < 60) return `${Math.round(seconds)} sec`;
+  if (seconds < 3600) return `${(seconds / 60).toFixed(seconds < 600 ? 1 : 0)} min`;
+  return `${(seconds / 3600).toFixed(seconds < 36_000 ? 1 : 0)} hr`;
 }
 
 function formatMoment(value) {
@@ -224,16 +236,68 @@ function renderMetrics() {
   elements.overallLabel.textContent = label;
 }
 
+function renderSlo() {
+  elements.sloGrid.replaceChildren();
+  state.slo.forEach((slo, index) => {
+    const card = document.createElement("article");
+    card.className = "slo-card";
+    card.dataset.status = slo.status;
+
+    const header = document.createElement("header");
+    header.append(textElement("span", "slo-index", `SLO ${String(index + 1).padStart(2, "0")}`));
+    header.append(textElement("span", `slo-state ${slo.status}`, slo.status.replace("_", " ")));
+    card.append(header, textElement("h3", "", slo.monitor_name));
+
+    const readings = document.createElement("div");
+    readings.className = "slo-readings";
+    const uptime = document.createElement("div");
+    uptime.append(textElement("span", "", "Observed uptime"));
+    uptime.append(textElement("strong", "", formatUptime(slo.observed_uptime_percent)));
+    const remaining = document.createElement("div");
+    remaining.append(textElement("span", "", "Budget remaining"));
+    remaining.append(textElement("strong", "", formatBudget(slo.remaining_budget_seconds)));
+    const samples = document.createElement("div");
+    samples.append(textElement("span", "", "Samples / failed"));
+    samples.append(textElement("strong", "", `${slo.samples} / ${slo.failed_checks}`));
+    readings.append(uptime, remaining, samples);
+    card.append(readings);
+
+    const track = document.createElement("div");
+    track.className = "budget-track";
+    const fill = document.createElement("i");
+    const consumed = slo.budget_consumed_percent ?? 0;
+    fill.style.width = `${Math.min(100, consumed)}%`;
+    track.append(fill);
+    card.append(track);
+    card.append(
+      textElement(
+        "p",
+        "budget-caption",
+        slo.budget_consumed_percent === null
+          ? `No samples in this ${slo.window_hours}h window`
+          : `${slo.budget_consumed_percent.toFixed(1)}% consumed · ${formatBudget(slo.estimated_downtime_seconds)} estimated down`,
+      ),
+    );
+    elements.sloGrid.append(card);
+  });
+  elements.sloEmpty.hidden = state.slo.length !== 0;
+}
+
 async function refreshData({ quiet = false } = {}) {
   if (state.refreshing) return;
   state.refreshing = true;
   elements.refreshButton.disabled = true;
   try {
-    [state.monitors, state.incidents] = await Promise.all([
+    const [monitors, incidents, sloReport] = await Promise.all([
       api("/api/monitors"),
       api("/api/incidents?limit=20"),
+      api(`/api/slo?window_hours=${elements.sloWindow.value}&target_percent=${elements.sloTarget.value}`),
     ]);
+    state.monitors = monitors;
+    state.incidents = incidents;
+    state.slo = sloReport.monitors;
     renderMetrics();
+    renderSlo();
     renderMonitors();
     renderIncidents();
     elements.lastUpdated.textContent = `${formatMoment(new Date().toISOString())} UTC`;
@@ -339,6 +403,8 @@ elements.clearKeyButton.addEventListener("click", () => {
 elements.addButton.addEventListener("click", openMonitorDialog);
 elements.emptyAddButton.addEventListener("click", openMonitorDialog);
 elements.refreshButton.addEventListener("click", () => refreshData());
+elements.sloWindow.addEventListener("change", () => refreshData());
+elements.sloTarget.addEventListener("change", () => refreshData());
 elements.settingsButton.addEventListener("click", () => {
   elements.apiKey.value = accessKey();
   elements.settingsDialog.showModal();

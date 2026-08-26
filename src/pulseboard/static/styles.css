@@ -335,7 +335,8 @@ h1 {
 }
 
 .board,
-.incidents {
+.incidents,
+.slo-section {
   margin-top: 72px;
 }
 
@@ -366,6 +367,159 @@ h1 {
   text-align: right;
   text-transform: uppercase;
 }
+
+.slo-heading {
+  align-items: center;
+}
+
+.slo-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.slo-controls label {
+  display: grid;
+  gap: 5px;
+}
+
+.slo-controls span,
+.slo-index {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.slo-controls select {
+  min-width: 125px;
+  height: 38px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  color: var(--ink);
+  background: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.slo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.slo-card {
+  position: relative;
+  min-width: 0;
+  padding: 20px;
+  border: 2px solid var(--ink);
+  background: var(--paper-raised);
+  box-shadow: 5px 5px 0 var(--line-dark);
+}
+
+.slo-card::before {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: calc(100% + 4px);
+  height: 6px;
+  background: var(--up);
+  content: "";
+}
+
+.slo-card[data-status="risk"]::before { background: var(--pending); }
+.slo-card[data-status="exhausted"]::before { background: var(--down); }
+.slo-card[data-status="no_data"]::before { background: var(--paused); }
+
+.slo-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 3px;
+}
+
+.slo-state {
+  padding: 4px 7px;
+  border: 1px solid currentColor;
+  color: var(--up);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slo-state.risk { color: var(--pending); }
+.slo-state.exhausted { color: var(--down); }
+.slo-state.no_data { color: var(--paused); }
+
+.slo-card h3 {
+  margin: 22px 0 18px;
+  overflow: hidden;
+  font-size: 1.35rem;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slo-readings {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 0.8fr;
+  gap: 10px;
+}
+
+.slo-readings div {
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.slo-readings span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.slo-readings strong {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+
+.budget-track {
+  height: 9px;
+  margin-top: 20px;
+  overflow: hidden;
+  border: 1px solid var(--ink);
+  background: #dedcd4;
+}
+
+.budget-track i {
+  display: block;
+  height: 100%;
+  background: var(--up);
+}
+
+.slo-card[data-status="risk"] .budget-track i { background: var(--pending); }
+.slo-card[data-status="exhausted"] .budget-track i { background: var(--down); }
+.slo-card[data-status="no_data"] .budget-track i { background: var(--paused); }
+
+.budget-caption,
+.slo-method,
+.slo-empty {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.budget-caption { margin: 8px 0 0; }
+.slo-method { max-width: 830px; margin: 18px 0 0; }
+.slo-empty { padding: 22px; border: 1px dashed var(--line-dark); background: var(--paper-raised); }
 
 .monitor-grid {
   display: grid;
@@ -819,6 +973,10 @@ dialog form {
   .monitor-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .slo-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 700px) {
@@ -883,6 +1041,19 @@ dialog form {
   .section-heading {
     align-items: start;
     flex-direction: column;
+  }
+
+  .slo-controls {
+    width: 100%;
+  }
+
+  .slo-controls label,
+  .slo-controls select {
+    width: 100%;
+  }
+
+  .slo-grid {
+    grid-template-columns: 1fr;
   }
 
   .section-heading > p {

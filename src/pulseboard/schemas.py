@@ -84,3 +84,25 @@ class StatusSummary(BaseModel):
     monitors_pending: int
     monitors_paused: int
     monitors: list[MonitorView]
+
+
+class SloView(BaseModel):
+    monitor_id: str
+    monitor_name: str
+    target_percent: float
+    window_hours: int
+    samples: int
+    failed_checks: int
+    observed_uptime_percent: float | None
+    allowed_downtime_seconds: float
+    estimated_downtime_seconds: float
+    remaining_budget_seconds: float
+    budget_consumed_percent: float | None
+    status: Literal["healthy", "risk", "exhausted", "no_data"]
+
+
+class SloReport(BaseModel):
+    generated_at: datetime
+    target_percent: float
+    window_hours: int
+    monitors: list[SloView]

@@ -74,6 +74,37 @@
         </article>
       </section>
 
+      <section class="slo-section" aria-labelledby="slo-heading">
+        <div class="section-heading slo-heading">
+          <div>
+            <p class="kicker">Reliability accounting</p>
+            <h2 id="slo-heading">Error budgets</h2>
+          </div>
+          <div class="slo-controls">
+            <label>
+              <span>Window</span>
+              <select id="slo-window">
+                <option value="24" selected>24 hours</option>
+                <option value="168">7 days</option>
+                <option value="720">30 days</option>
+              </select>
+            </label>
+            <label>
+              <span>SLO target</span>
+              <select id="slo-target">
+                <option value="99">99%</option>
+                <option value="99.5">99.5%</option>
+                <option value="99.9" selected>99.9%</option>
+                <option value="99.95">99.95%</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="slo-grid" id="slo-grid" aria-live="polite"></div>
+        <p class="slo-empty" id="slo-empty">Add a monitor to start reliability accounting.</p>
+        <p class="slo-method">Estimated downtime counts each failed sample as one configured check interval. Use the report as an operational signal, not a replacement for event-level telemetry.</p>
+      </section>
+
       <section class="board" aria-labelledby="monitors-heading">
         <div class="section-heading">
           <div>
@@ -105,7 +136,7 @@
     </main>
 
     <footer>
-      <span>Pulseboard 1.1</span>
+      <span>Pulseboard 1.2</span>
       <span>Data stays on this host</span>
       <a href="/status">Public status page</a>
       <a href="/metrics">Prometheus metrics</a>

@@ -106,6 +106,37 @@ async def test_status_and_prometheus_metrics(
     assert metrics.status_code == 200
     assert 'pulseboard_monitors{state="up"} 1' in metrics.text
     assert "pulseboard_open_incidents 0" in metrics.text
+    assert 'pulseboard_slo_budget_consumed_percent{monitor="' in metrics.text
+
+
+async def test_slo_report_quantifies_error_budget_exhaustion(
+    client: AsyncClient,
+    monitor_payload: dict[str, Any],
+    target_state: dict[str, Any],
+) -> None:
+    monitor = await create_monitor(client, monitor_payload)
+    await client.post(f"/api/monitors/{monitor['id']}/checks")
+    target_state["status_code"] = 503
+    await client.post(f"/api/monitors/{monitor['id']}/checks")
+    target_state["status_code"] = 204
+    await client.post(f"/api/monitors/{monitor['id']}/checks")
+
+    response = await client.get("/api/slo", params={"window_hours": 24, "target_percent": 99.95})
+    assert response.status_code == 200
+    report = response.json()
+    assert report["target_percent"] == 99.95
+    slo = report["monitors"][0]
+    assert slo["samples"] == 3
+    assert slo["failed_checks"] == 1
+    assert slo["observed_uptime_percent"] == 66.667
+    assert slo["allowed_downtime_seconds"] == 43.2
+    assert slo["estimated_downtime_seconds"] == 60.0
+    assert slo["remaining_budget_seconds"] == 0.0
+    assert slo["budget_consumed_percent"] == 138.9
+    assert slo["status"] == "exhausted"
+
+    invalid = await client.get("/api/slo", params={"target_percent": 100})
+    assert invalid.status_code == 422
 
 
 async def test_duplicate_url_and_invalid_range_are_rejected(

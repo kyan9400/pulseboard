@@ -2,6 +2,13 @@
 
 All notable changes to Pulseboard are documented here.
 
+## 1.2.0 — 2026-08-26
+
+- Added per-monitor SLO error-budget reports with selectable windows and targets.
+- Added observed uptime, estimated downtime, remaining budget, and exhaustion states.
+- Added Prometheus export for 24-hour error-budget consumption.
+- Added an error-budget control surface to the operations dashboard.
+
 ## 1.1.0 — 2026-08-26
 
 - Added a public, auto-refreshing service status page with current availability and incident history.

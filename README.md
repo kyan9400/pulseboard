@@ -5,16 +5,17 @@
 [![Docker](https://img.shields.io/badge/container-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![License: MIT](https://img.shields.io/badge/license-MIT-181914.svg)](LICENSE)
 
-A compact, self-hosted HTTP uptime monitor with incident history, an operations dashboard, a public status page, and a small deployment footprint.
+A compact, self-hosted HTTP uptime monitor with incident history, SLO error-budget analysis, an operations dashboard, a public status page, and a small deployment footprint.
 
 ![Pulseboard operations dashboard](docs/pulseboard-dashboard.png)
 
-Pulseboard checks public HTTP endpoints on a schedule, records latency and availability in SQLite, and opens or resolves incidents automatically. It exposes the same state through a responsive dashboard, a typed JSON API, health probes, and Prometheus-compatible metrics.
+Pulseboard checks public HTTP endpoints on a schedule, records latency and availability in SQLite, and opens or resolves incidents automatically. It turns retained checks into selectable SLO error-budget reports and exposes the same state through a responsive dashboard, a typed JSON API, health probes, and Prometheus-compatible metrics.
 
 ## Why Pulseboard
 
 - **Useful in one container:** the scheduler, API, dashboard, and database work without external services.
 - **Operationally legible:** current state, 24-hour availability, latest latency, and incident recovery are visible at a glance.
+- **Reliability accounting:** selectable 24-hour, 7-day, and 30-day reports show SLO target, observed uptime, estimated downtime, and budget exhaustion.
 - **Safe outbound defaults:** private and reserved networks are blocked, credentials are rejected, and redirects are not followed.
 - **Protected writes:** set one environment variable to require an API key for create, update, check, and delete operations.
 - **Observable itself:** liveness, readiness, and metrics endpoints are included.
@@ -77,6 +78,7 @@ Use `PULSEBOARD_ALLOW_PRIVATE_TARGETS=true` only when Pulseboard runs on a trust
 | `POST /api/monitors` | Create a validated monitor |
 | `POST /api/monitors/{id}/checks` | Run an immediate check |
 | `GET /api/incidents` | Recent open and resolved incidents |
+| `GET /api/slo` | Per-monitor SLO and error-budget report for a selected window |
 | `GET /metrics` | Prometheus-compatible gauges |
 | `GET /health/live` | Process liveness |
 | `GET /health/ready` | Database readiness |
@@ -110,7 +112,7 @@ pytest
 docker build -t pulseboard .
 ```
 
-The test suite uses an in-memory HTTP transport, so it does not contact external services.
+The test suite uses an in-memory HTTP transport, so it does not contact external services. It covers monitor lifecycle, incident recovery, SLO exhaustion math, access control, outbound-target protection, scheduler behavior, and production documentation settings.
 
 ## License
 

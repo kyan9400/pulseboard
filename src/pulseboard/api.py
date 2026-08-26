@@ -17,6 +17,7 @@ from .schemas import (
     MonitorCreate,
     MonitorUpdate,
     MonitorView,
+    SloReport,
     StatusSummary,
 )
 from .security import require_write_access, validate_target_url
@@ -27,6 +28,7 @@ from .service import (
     list_checks,
     list_incidents,
     list_monitor_views,
+    list_slo_views,
     perform_check,
     update_monitor,
 )
@@ -218,6 +220,22 @@ async def public_status(session: Session) -> StatusSummary:
     return _status_summary(await list_monitor_views(session))
 
 
+@router.get("/api/slo", response_model=SloReport, tags=["reliability"])
+async def slo_report(
+    session: Session,
+    window_hours: Annotated[int, Query(ge=1, le=720)] = 24,
+    target_percent: Annotated[float, Query(ge=90, le=99.99)] = 99.9,
+) -> SloReport:
+    return SloReport(
+        generated_at=datetime.now(UTC),
+        target_percent=target_percent,
+        window_hours=window_hours,
+        monitors=await list_slo_views(
+            session, window_hours=window_hours, target_percent=target_percent
+        ),
+    )
+
+
 @router.get("/health/live", include_in_schema=False)
 async def liveness() -> dict[str, str]:
     return {"status": "ok"}
@@ -232,6 +250,7 @@ async def readiness(session: Session) -> dict[str, str]:
 @router.get("/metrics", response_class=PlainTextResponse, include_in_schema=False)
 async def metrics(session: Session) -> PlainTextResponse:
     views = await list_monitor_views(session)
+    slo_views = await list_slo_views(session, window_hours=24, target_percent=99.9)
     states = ("up", "down", "pending", "paused")
     lines = [
         "# HELP pulseboard_monitors Number of configured monitors by current state.",
@@ -244,6 +263,14 @@ async def metrics(session: Session) -> PlainTextResponse:
         "# HELP pulseboard_open_incidents Number of unresolved incidents.",
         "# TYPE pulseboard_open_incidents gauge",
         f"pulseboard_open_incidents {sum(view.has_open_incident for view in views)}",
+        "# HELP pulseboard_slo_budget_consumed_percent Estimated 24h error budget consumed.",
+        "# TYPE pulseboard_slo_budget_consumed_percent gauge",
+        *(
+            f'pulseboard_slo_budget_consumed_percent{{monitor="{view.monitor_id}"}} '
+            f"{view.budget_consumed_percent}"
+            for view in slo_views
+            if view.budget_consumed_percent is not None
+        ),
         "",
     ]
     return PlainTextResponse("\n".join(lines), media_type="text/plain; version=0.0.4")

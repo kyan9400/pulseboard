@@ -13,7 +13,7 @@ from .checker import CheckOutcome, check_monitor
 from .config import Settings
 from .database import Database
 from .models import Check, Incident, Monitor, utc_now
-from .schemas import CheckView, IncidentView, MonitorCreate, MonitorUpdate, MonitorView
+from .schemas import CheckView, IncidentView, MonitorCreate, MonitorUpdate, MonitorView, SloView
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +207,62 @@ async def list_monitor_views(session: AsyncSession) -> list[MonitorView]:
                 else None,
                 last_check=CheckView.model_validate(latest_check) if latest_check else None,
                 has_open_incident=monitor.id in open_incident_ids,
+            )
+        )
+    return views
+
+
+async def list_slo_views(
+    session: AsyncSession, *, window_hours: int, target_percent: float
+) -> list[SloView]:
+    cutoff = utc_now() - timedelta(hours=window_hours)
+    monitors = list(await session.scalars(select(Monitor).order_by(Monitor.name.asc())))
+    rows = await session.execute(
+        select(
+            Check.monitor_id,
+            func.count(Check.id),
+            func.sum(case((Check.status == "down", 1), else_=0)),
+        )
+        .where(Check.checked_at >= cutoff)
+        .group_by(Check.monitor_id)
+    )
+    counts = {monitor_id: (int(total or 0), int(failed or 0)) for monitor_id, total, failed in rows}
+    window_seconds = window_hours * 3600
+    allowed_downtime = window_seconds * (1 - target_percent / 100)
+    views: list[SloView] = []
+    for monitor in monitors:
+        samples, failed = counts.get(monitor.id, (0, 0))
+        estimated_downtime = min(float(window_seconds), float(failed * monitor.interval_seconds))
+        remaining = max(0.0, allowed_downtime - estimated_downtime)
+        if samples == 0:
+            observed_uptime = None
+            consumed = None
+            slo_status = "no_data"
+        else:
+            observed_uptime = ((samples - failed) / samples) * 100
+            consumed = (estimated_downtime / allowed_downtime) * 100
+            if remaining == 0 and estimated_downtime > 0:
+                slo_status = "exhausted"
+            elif consumed >= 75:
+                slo_status = "risk"
+            else:
+                slo_status = "healthy"
+        views.append(
+            SloView(
+                monitor_id=monitor.id,
+                monitor_name=monitor.name,
+                target_percent=target_percent,
+                window_hours=window_hours,
+                samples=samples,
+                failed_checks=failed,
+                observed_uptime_percent=round(observed_uptime, 3)
+                if observed_uptime is not None
+                else None,
+                allowed_downtime_seconds=round(allowed_downtime, 1),
+                estimated_downtime_seconds=round(estimated_downtime, 1),
+                remaining_budget_seconds=round(remaining, 1),
+                budget_consumed_percent=round(consumed, 1) if consumed is not None else None,
+                status=slo_status,
             )
         )
     return views
