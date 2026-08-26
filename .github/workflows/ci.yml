@@ -53,6 +53,12 @@ jobs:
       - name: Build image
         run: docker build --tag pulseboard:test .
 
+      - name: Build Vercel image
+        run: docker build --file Dockerfile.vercel --tag pulseboard:vercel .
+
+      - name: Inspect Vercel runtime user
+        run: test "$(docker run --rm --entrypoint=id pulseboard:vercel -u)" != "0"
+
       - name: Inspect runtime user
         run: test "$(docker run --rm --entrypoint=id pulseboard:test -u)" != "0"
 

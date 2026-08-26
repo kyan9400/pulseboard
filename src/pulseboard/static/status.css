@@ -25,6 +25,9 @@ body {
     var(--paper);
   font-family: var(--font-ui);
 }
+.sandbox-banner { display: flex; gap: 12px; justify-content: center; padding: 9px 18px; color: var(--paper); background: var(--ink); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.sandbox-banner strong { color: var(--signal); }
+.sandbox-banner span { opacity: .72; }
 
 a { color: inherit; }
 

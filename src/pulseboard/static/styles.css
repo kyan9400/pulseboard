@@ -78,6 +78,9 @@ a {
   background: rgba(239, 237, 230, 0.95);
   backdrop-filter: blur(12px);
 }
+.sandbox-banner { display: flex; gap: 12px; justify-content: center; padding: 9px 18px; color: var(--paper); background: var(--ink); border-bottom: 1px solid var(--line-dark); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.sandbox-banner strong { color: var(--signal); }
+.sandbox-banner span { opacity: .72; }
 
 .wordmark,
 .masthead-status,
