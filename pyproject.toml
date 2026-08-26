@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pulseboard-monitor"
+version = "1.0.0"
+description = "A compact, self-hosted HTTP uptime monitor and incident dashboard."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Hassan Ak" }]
+keywords = ["uptime", "monitoring", "fastapi", "status-page", "observability"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: FastAPI",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: System :: Monitoring",
+]
+dependencies = [
+  "aiosqlite>=0.21,<1",
+  "fastapi>=0.116,<1",
+  "httpx>=0.28,<1",
+  "jinja2>=3.1,<4",
+  "pydantic-settings>=2.10,<3",
+  "sqlalchemy>=2.0.41,<3",
+  "uvicorn[standard]>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "asgi-lifespan>=2.1,<3",
+  "build>=1.3,<2",
+  "pytest>=8.4,<10",
+  "pytest-asyncio>=1.0,<2",
+  "pytest-cov>=6,<8",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+pulseboard = "pulseboard.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/kyan9400/pulseboard"
+Issues = "https://github.com/kyan9400/pulseboard/issues"
+Source = "https://github.com/kyan9400/pulseboard"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pulseboard"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --cov=pulseboard --cov-report=term-missing"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"

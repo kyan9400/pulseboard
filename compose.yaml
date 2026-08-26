@@ -1,0 +1,20 @@
+services:
+  pulseboard:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PULSEBOARD_API_KEY: ${PULSEBOARD_API_KEY:-}
+      PULSEBOARD_ALLOW_PRIVATE_TARGETS: ${PULSEBOARD_ALLOW_PRIVATE_TARGETS:-false}
+    volumes:
+      - pulseboard_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pulseboard_data:

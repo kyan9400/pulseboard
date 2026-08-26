@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Pulseboard self-hosted uptime monitor">
+    <title>Pulseboard / Operations</title>
+    <link rel="icon" href="{{ url_for('static', path='/favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+    <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to dashboard</a>
+
+    <header class="masthead">
+      <a class="wordmark" href="/" aria-label="Pulseboard home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>Pulseboard</span>
+      </a>
+      <div class="masthead-status" aria-live="polite">
+        <span class="signal-dot pending" id="overall-dot" aria-hidden="true"></span>
+        <span class="eyebrow">Network condition</span>
+        <strong id="overall-label">Awaiting signal</strong>
+      </div>
+      <nav class="header-actions" aria-label="Dashboard actions">
+        <button class="button button-quiet" id="settings-button" type="button">Access key</button>
+        {% if show_docs %}
+        <a class="button button-quiet" href="/docs">API</a>
+        {% else %}
+        <a class="button button-quiet" href="/api/status">Status</a>
+        {% endif %}
+        <button class="button button-primary" id="add-button" type="button">Add monitor</button>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero" aria-labelledby="dashboard-title">
+        <div>
+          <p class="kicker">Live service intelligence / UTC</p>
+          <h1 id="dashboard-title">Operations at a glance.</h1>
+          <p class="hero-copy">HTTP availability, latency, and incident state from one small self-hosted service.</p>
+        </div>
+        <div class="last-update">
+          <span>Last telemetry refresh</span>
+          <time id="last-updated">Not yet</time>
+          <button class="text-button" id="refresh-button" type="button">Refresh now</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Current system metrics">
+        <article class="metric metric-total">
+          <span class="metric-index">01</span>
+          <p>Monitors</p>
+          <strong id="metric-total">—</strong>
+          <small>Configured endpoints</small>
+        </article>
+        <article class="metric metric-up">
+          <span class="metric-index">02</span>
+          <p>Operational</p>
+          <strong id="metric-up">—</strong>
+          <small>Responding as expected</small>
+        </article>
+        <article class="metric metric-down">
+          <span class="metric-index">03</span>
+          <p>Attention</p>
+          <strong id="metric-down">—</strong>
+          <small>Open service failures</small>
+        </article>
+        <article class="metric metric-latency">
+          <span class="metric-index">04</span>
+          <p>Median latency</p>
+          <strong id="metric-latency">—</strong>
+          <small>Latest successful checks</small>
+        </article>
+      </section>
+
+      <section class="board" aria-labelledby="monitors-heading">
+        <div class="section-heading">
+          <div>
+            <p class="kicker">Endpoint registry</p>
+            <h2 id="monitors-heading">Active monitors</h2>
+          </div>
+          <p id="monitor-count">0 records</p>
+        </div>
+        <div class="monitor-grid" id="monitor-grid" aria-live="polite"></div>
+        <div class="empty-state" id="monitor-empty" hidden>
+          <span class="empty-code">NO SIGNALS REGISTERED</span>
+          <h3>Start with the service users notice first.</h3>
+          <p>Add a public HTTP endpoint. Pulseboard will check it on schedule and open an incident when its contract fails.</p>
+          <button class="button button-primary" id="empty-add-button" type="button">Create first monitor</button>
+        </div>
+      </section>
+
+      <section class="incidents" aria-labelledby="incidents-heading">
+        <div class="section-heading">
+          <div>
+            <p class="kicker">Event ledger</p>
+            <h2 id="incidents-heading">Recent incidents</h2>
+          </div>
+          <p>Automatic open / recovery tracking</p>
+        </div>
+        <div class="incident-list" id="incident-list"></div>
+        <p class="incident-empty" id="incident-empty">No incidents recorded. Quiet is good.</p>
+      </section>
+    </main>
+
+    <footer>
+      <span>Pulseboard 1.0</span>
+      <span>Data stays on this host</span>
+      <a href="/api/status">Public status JSON</a>
+      <a href="/metrics">Prometheus metrics</a>
+    </footer>
+
+    <dialog id="monitor-dialog" aria-labelledby="monitor-dialog-title">
+      <form id="monitor-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="kicker">New signal</p>
+            <h2 id="monitor-dialog-title">Add a monitor</h2>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="monitor-dialog" aria-label="Close dialog">×</button>
+        </div>
+        <div class="form-grid">
+          <label class="field field-wide">
+            <span>Service name</span>
+            <input name="name" type="text" maxlength="80" autocomplete="off" placeholder="Customer API" required>
+          </label>
+          <label class="field field-wide">
+            <span>HTTP endpoint</span>
+            <input name="url" type="url" inputmode="url" placeholder="https://api.example.com/health" required>
+            <small>Public targets only unless private targets are explicitly enabled.</small>
+          </label>
+          <label class="field">
+            <span>Method</span>
+            <select name="method">
+              <option value="GET">GET</option>
+              <option value="HEAD">HEAD</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Interval</span>
+            <select name="interval_seconds">
+              <option value="30">30 seconds</option>
+              <option value="60" selected>1 minute</option>
+              <option value="300">5 minutes</option>
+              <option value="900">15 minutes</option>
+              <option value="3600">1 hour</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Timeout (seconds)</span>
+            <input name="timeout_seconds" type="number" min="1" max="60" step="0.5" value="10" required>
+          </label>
+          <div class="field status-range">
+            <span>Expected status range</span>
+            <div>
+              <input name="expected_status_min" aria-label="Minimum expected status" type="number" min="100" max="599" value="200" required>
+              <span>to</span>
+              <input name="expected_status_max" aria-label="Maximum expected status" type="number" min="100" max="599" value="399" required>
+            </div>
+          </div>
+        </div>
+        <p class="form-error" id="monitor-form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="button button-quiet" type="button" data-close-dialog="monitor-dialog">Cancel</button>
+          <button class="button button-primary" type="submit">Add and check</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="settings-dialog" aria-labelledby="settings-dialog-title">
+      <form id="settings-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="kicker">Write access</p>
+            <h2 id="settings-dialog-title">API access key</h2>
+          </div>
+          <button class="icon-button" type="button" data-close-dialog="settings-dialog" aria-label="Close dialog">×</button>
+        </div>
+        <p class="dialog-copy">If this Pulseboard instance has write protection enabled, enter its key here. It remains in this browser tab and is never stored by the server.</p>
+        <label class="field field-wide">
+          <span>X-API-Key</span>
+          <input id="api-key" name="api_key" type="password" autocomplete="off" placeholder="Not required by default">
+        </label>
+        <div class="dialog-actions">
+          <button class="button button-quiet" id="clear-key-button" type="button">Clear</button>
+          <button class="button button-primary" type="submit">Use this key</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
