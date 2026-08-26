@@ -5,7 +5,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR /build
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-RUN python -m pip wheel --wheel-dir /wheels .
+RUN python -m pip wheel --wheel-dir /wheels . "msgpack>=1.2.1"
 
 FROM python:3.13-slim AS runner
 
@@ -15,12 +15,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PULSEBOARD_DATABASE_URL=sqlite+aiosqlite:////data/pulseboard.db
 WORKDIR /app
 
-RUN groupadd --gid 1001 pulseboard \
+RUN apt-get update \
+    && apt-get upgrade --yes \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --gid 1001 pulseboard \
     && useradd --uid 1001 --gid pulseboard --create-home pulseboard \
     && mkdir -p /data \
     && chown pulseboard:pulseboard /data
 COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-cache-dir /wheels/* \
+RUN python -m pip install --no-cache-dir --upgrade "setuptools>=78.1.1" /wheels/* \
     && rm -rf /wheels
 
 USER pulseboard
