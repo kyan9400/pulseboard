@@ -9,6 +9,10 @@ A compact, self-hosted HTTP uptime monitor with incident history, SLO error-budg
 
 ![Pulseboard operations dashboard](docs/pulseboard-dashboard.png)
 
+## Live demo
+
+[Open Pulseboard](https://pulseboard-five-tau.vercel.app/) or view its [public status page](https://pulseboard-five-tau.vercel.app/status). This public sandbox uses temporary storage and disables scheduled checks; the Docker deployment below provides persistent monitoring.
+
 Pulseboard checks public HTTP endpoints on a schedule, records latency and availability in SQLite, and opens or resolves incidents automatically. It turns retained checks into selectable SLO error-budget reports and exposes the same state through a responsive dashboard, a typed JSON API, health probes, and Prometheus-compatible metrics.
 
 ## Why Pulseboard
