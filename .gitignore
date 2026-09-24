@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .coverage
+coverage.xml
 .pytest_cache/
 .ruff_cache/
 .venv/
@@ -12,6 +13,8 @@ htmlcov/
 *.db-shm
 *.db-wal
 .env
+.env.*
+!.env.example
 .idea/
 .vscode/
 .DS_Store

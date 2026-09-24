@@ -80,7 +80,10 @@ Use `PULSEBOARD_ALLOW_PRIVATE_TARGETS=true` only when Pulseboard runs on a trust
 | `GET /api/status` | Public operational summary |
 | `GET /api/monitors` | Monitor state and 24-hour availability |
 | `POST /api/monitors` | Create a validated monitor |
+| `PATCH /api/monitors/{id}` | Update monitor settings, including pausing or resuming |
+| `DELETE /api/monitors/{id}` | Remove a monitor and its history |
 | `POST /api/monitors/{id}/checks` | Run an immediate check |
+| `GET /api/monitors/{id}/checks` | Recent check history for one monitor |
 | `GET /api/incidents` | Recent open and resolved incidents |
 | `GET /api/slo` | Per-monitor SLO and error-budget report for a selected window |
 | `GET /metrics` | Prometheus-compatible gauges |
